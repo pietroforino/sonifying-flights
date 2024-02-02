@@ -288,6 +288,7 @@ async function startEverything() {
     .tolerance({ early: 0 });
 }
 
+
 async function toggleAudio() {
   if (firstStart) {
     await startEverything();
@@ -338,5 +339,143 @@ const sendFlightRequest = (lat, long, r) => {
       ).catch((err) => console.error(err));
 }
 
-audioButton.addEventListener("click", toggleAudio);
+
+// Function to create a GeoJSON circle
+function createGeoJSONCircle(center, radiusInKm) {
+  const options = { steps: 64, units: 'kilometers' };
+  const circle = turf.circle(center, radiusInKm, options);
+  return circle;
+}
+
+mapboxgl.accessToken = 'pk.eyJ1IjoicGlldHJvZm9yaW5vIiwiYSI6ImNqeHgzd3JwajBrc2YzaXBma3UxODdmdWUifQ.8jG3b2D80IsptKlqlr0l8w';
+/*
+const map = new mapboxgl.Map({
+  container: 'map', // container ID
+  center: [-74.5, 40], // starting position [lng, lat]
+  zoom: 9, // starting zoom,
+  style : 'mapbox://styles/pietroforino/cls4jzs56003h01r04o83h8hw'
+});
+
+map.on('load', () => {
+    const points = turf.featureCollection([]);
+    
+    // add data source to hold our data we want to display
+    map.addSource("circleData", {
+        type: "geojson",
+        data: points
+    });
+    
+    map.addLayer({
+        "id": "circleLayer",
+        "type": "circle",
+        "source": "circleData",
+        "paint": {
+            "circle-color": "blue",
+            "circle-radius": 10, // initial radius, you can adjust this value
+            "circle-opacity": 0.6
+        }
+    });
+
+    // on user click, extract the latitude / longitude, update our data source, and display it on our map
+    map.on('click', (clickEvent) => {
+        const lngLat = [clickEvent.lngLat.lng, clickEvent.lngLat.lat];
+        points.features.push(turf.point(lngLat));
+        map.getSource('circleData').setData(points);
+
+        // You can adjust the radius based on your requirements
+        const radius = 0.5; // in kilometers, adjust as needed
+        const circleFeature = createGeoJSONCircle(lngLat, radius);
+        map.getSource('circleData').setData(circleFeature);
+    });
+    map.on('mousemove', (e) => {
+      document.getElementById('info').innerHTML =
+      // `e.point` is the x, y coordinates of the `mousemove` event
+      // relative to the top-left corner of the map.
+      JSON.stringify(e.point) +
+      '<br />' +
+      // `e.lngLat` is the longitude, latitude geographical position of the event.
+      JSON.stringify(e.lngLat.wrap());
+      });
+});
+*/
+
+var center = [9, 45];
+var radius = 25;
+var precision = 0.25;
+var epsilon = 0.0001; // small number so that grid cells have some non zero height
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style : 'mapbox://styles/pietroforino/cls4jzs56003h01r04o83h8hw',
+    center: center,
+    zoom: 9,
+    pitch: 30
+});
+
+map.on('click', function (e) {
+  var clickedCoordinates = [e.lngLat.lng, e.lngLat.lat];
+  updateDome(clickedCoordinates);
+});
+map.on('mousemove', (e) => {
+  document.getElementById('info').innerHTML =
+  // `e.point` is the x, y coordinates of the `mousemove` event
+  // relative to the top-left corner of the map.
+  JSON.stringify(e.point) +
+  '<br />' +
+  // `e.lngLat` is the longitude, latitude geographical position of the event.
+  JSON.stringify(e.lngLat.wrap());
+  });
+
+function updateDome(center) {
+  var grid = turf.hexGrid(turf.bbox(turf.circle(center, radius)), precision);
+  var dome = turf.featureCollection(grid.features.map(function (feature) {
+      var point = turf.centroid(feature);
+      var distance = turf.distance(center, point);
+      if (distance > radius) {
+          return; // will be filtered out later
+      }
+
+      var z = Math.sqrt(Math.pow(radius, 2) - Math.pow(distance, 2));
+      z = isNaN(z) ? 0 : z;
+
+      return turf.feature(feature.geometry, {
+          base_height: z * 1000,
+          height: (z * 1000) + (distance * 1000 + epsilon) * 0.1
+      });
+  }).filter(function (feature) {
+      return feature;
+  }));
+
+  // Remove the existing dome layer if it exists
+  if (map.getSource('dome')) {
+      map.removeLayer('dome');
+      map.removeSource('dome');
+  }
+
+  map.addSource('dome', {
+      type: 'geojson',
+      data: dome
+  });
+
+  map.addLayer({
+      id: 'dome',
+      type: 'fill-extrusion',
+      source: 'dome',
+      layout: {},
+      paint: {
+          'fill-extrusion-color': 'red',
+          'fill-extrusion-base': {
+              type: 'identity',
+              property: 'base_height'
+          },
+          'fill-extrusion-height': {
+              type: 'identity',
+              property: 'height'
+          },
+          'fill-extrusion-opacity': 0.5
+      }
+  });
+}
+
+
 
