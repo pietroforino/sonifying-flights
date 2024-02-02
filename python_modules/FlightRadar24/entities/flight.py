@@ -45,7 +45,7 @@ class Flight(Entity):
 
 
     def __str__(self) -> str:
-        template = "<({}) {} - Latitude: {} - Longitude: {} - Altitude: {} - Ground Speed: {} - Heading: {}>"
+        template = "<({}) {} | Latitude: {} | Longitude: {} | Altitude: {} | Ground Speed: {} | Heading: {}>"
         return template.format(
             self.aircraft_code,
             self.registration,
@@ -62,7 +62,7 @@ class Flight(Entity):
         template = "<({}) {} - Altitude: {} - Ground Speed: {} - Heading: {}>"
         return template.format(self.aircraft_code, self.registration, self.altitude, self.ground_speed, self.heading)
     """
-    
+
     def __get_info(self, info: Any, default: Optional[Any] = None) -> Any:
         default = default if default is not None else self._default_text
         return info if info is not None and info != self._default_text else default

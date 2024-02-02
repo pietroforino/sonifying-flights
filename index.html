@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  </head>
-  <body>
-    <div id="vis"></div>
-    <div id="app">
-      <button id="audioButton">🔈</button>
-    </div>
-    <script type="module" src="/main.js"></script>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Get coordinates of the mouse pointer</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+<script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+<script type="module" src="/main.js"></script>
+<style>
+
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<pre id="info"></pre>
     <!-- <script type="module" src="/socket.js"></script> -->
-  </body>
+</body>
 </html>
