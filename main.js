@@ -36,7 +36,6 @@ let bufferSourceNodes_oneshotsList = [];
 
 
 
-
 function loadBuffer(url) {
   return fetch(url)
     .then((r) => r.arrayBuffer())
@@ -274,6 +273,7 @@ async function startEverything() {
   //saturator.connect(audioCtx.destination);
   clock.start();
 
+
   // load loops
   for (let i=0; i < loopUrl.length; i++) {
     console.log( loopUrl[i] );
@@ -295,7 +295,7 @@ async function startEverything() {
     bufferSourceNodes_loopsList.push( bufferSrcNode )
   }
   console.log( bufferSourceNodes_loopsList )
-
+  */
 
   await startLoop();
 
@@ -365,6 +365,27 @@ async function startEverything() {
   */
 }
 
+
+function destoyPrevSounds() {
+  console.log("destroy sounds");
+}
+
+
+function emitNewSounds( data ) {
+  console.log( data.length );
+
+  for( let i=0; i < data.length; i++) {
+    // for every flight lets create a new sound
+    let groundSpeed = data[i]["Ground Speed"];
+    let id = data[i]["flight_id"];
+    let heading = data[i]["Heading"];
+    let lat = data[i]["Latitude"];
+    let long = data[i]["Longitude"];
+
+    console.log( id );
+  }
+}
+
 async function toggleAudio() {
   if (firstStart) {
     await startEverything();
@@ -374,30 +395,33 @@ async function toggleAudio() {
   } else {
     await audioCtx.resume();
   }
-  
-  sendFlightRequest(49.00, 2.548, 5000)
 
+  await sendFlightRequest(49.00, 2.548, 5000)
+
+  if( flightData === undefined) {
+    return;
+  }
+
+  destoyPrevSounds();
+  // according to the flight we are tracking,
+  // let's create corresponding sounds
+  emitNewSounds( flightData );
 }
 
 
-const data = [
-  { "lat":"Porsche", "model":"911S" },
-  { "long":"Mercedes-Benz", "model":"220SE" },
-  { "radius":"Jaguar","model": "Mark VII" }
- ];
- 
-let flightData
+let flightData;
 
-const sendFlightRequest = (lat, long, r) => {
+//sendFlightRequest = (lat, long, r) => {
+async function sendFlightRequest(lat, long, r) {
   const param = {
     "lat": lat,
     "long": long,
     "radius": r,
   }
-  fetch("http://127.0.0.1:5000/receiver", 
+  fetch("http://127.0.0.1:5000/receiver",
   {
       method: 'POST',
-      headers: { 
+      headers: {
           'Content-type': 'application/json',
           'Accept': 'application/json'
       },
@@ -410,10 +434,10 @@ const sendFlightRequest = (lat, long, r) => {
           }
       }).then(jsonResponse=>{
           flightData = jsonResponse
-          console.log(flightData)
-      } 
+          //return( flightData )
+          //console.log(flightData)
+      }
       ).catch((err) => console.error(err));
 }
 
 audioButton.addEventListener("click", toggleAudio);
-
