@@ -38,7 +38,7 @@ let bufferSourceNodes_oneshotsList = [];
 var center = [9, 45];
 var sphereRadius = 50;
 var precision = 0.25;
-var epsilon = 0.0001; // small number so that grid cells have some non zero height
+var epsilon = 1; // small number so that grid cells have some non zero height
 
 function loadBuffer(url) {
   return fetch(url)
@@ -449,7 +449,7 @@ async function sendFlightRequest(lat, long, r) {
       }).then(jsonResponse=>{
           flightData = jsonResponse
           //return( flightData )
-          //console.log(flightData)
+          console.log(flightData)
       }
       ).catch((err) => console.error(err));
 }
@@ -474,7 +474,7 @@ var map = new mapboxgl.Map({
 
 map.on('click', function (e) {
   var clickedCoordinates = [e.lngLat.lng, e.lngLat.lat];
-  updateDome(clickedCoordinates, 6.6);
+  updateDome(clickedCoordinates, 20);
 });
 map.on('mousemove', (e) => {
   document.getElementById('info').innerHTML =
@@ -489,13 +489,13 @@ map.on('mousemove', (e) => {
 function updateDome(center, raggio) {
   console.log(center)
   sendFlightRequest(center[1], center[0], raggio * 1000)
-
-  var grid = turf.hexGrid(turf.bbox(turf.circle(center, raggio)), precision);
+  const options = { steps: 64, units: 'kilometers' };
+  var grid = turf.hexGrid(turf.bbox(turf.circle(center, raggio, options)), precision);
   var dome = turf.featureCollection(grid.features.map(function (feature) {
       var point = turf.centroid(feature);
       var distance = turf.distance(center, point);
       if (distance > raggio) {
-          return; // will be filtered out later
+          return;
       }
 
       var z = Math.sqrt(Math.pow(raggio, 2) - Math.pow(distance, 2));

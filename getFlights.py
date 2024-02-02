@@ -21,25 +21,7 @@ def getJsonFromFlight(data):
         flightString = flightString.replace('<', '').replace('>','')
 
         # split by delimitator
-        fieldList = [ a.strip() for a in flightString.split('-')]
-
-        print( "field list ")
-        print( fieldList )
-
-        #print( len( fieldList ) )
-        if len( fieldList ) == 7:
-            # agggreget first an sendon element
-            aggregate = fieldList[0] + '-' + fieldList[1]
-            #print( fieldList )
-            #print( aggregate )
-            # get rid of second element
-            fieldList.pop(1)
-            # and replace first element with aggragate
-            fieldList[0] = aggregate
-        else:
-            # leave as it is
-            pass
-
+        fieldList = [ a.strip() for a in flightString.split('|')]
 
         dictionary = {
             "flight_id": fieldList[0],
