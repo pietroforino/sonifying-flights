@@ -386,11 +386,17 @@ function emitNewSounds( data ) {
     let lat = data[i]["Latitude"];
     let long = data[i]["Longitude"];
 
+
+
+
     console.log( id );
   }
 }
 
 
+
+
+// PRINCIPALE
 async function toggleAudio() {
   if (firstStart) {
     await startEverything();
@@ -412,6 +418,9 @@ async function toggleAudio() {
   // let's create corresponding sounds
   emitNewSounds( flightData );
 }
+
+
+
 
 
 let flightData;
