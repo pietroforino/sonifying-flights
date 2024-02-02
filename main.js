@@ -166,7 +166,7 @@ async function emitNewSounds( data ) {
 
 
   currentFlightData = data;
-  let volume = 1.0 / currentFlightData.length;
+  let volumeByQuantity = 1.0 / currentFlightData.length;
 
 
   //console.log( currentFlightData.length );
@@ -175,28 +175,26 @@ async function emitNewSounds( data ) {
     // for every flight lets create a new sound
     let id = currentFlightData[i]["flight_id"];
 
-    let volumeByGS = Math.min(1.0, currentFlightData[i]["Ground Speed"] / 700);
+    let volumeByGS = Math.min(1.0, currentFlightData[i]["Ground Speed"] / 300);
 
     let volumeByAltitude =  getDistanceFromLatLonInKm(currentFlightData[i]["Latitude"], currentFlightData[i]["Longitude"], clickedCoordinates[1], clickedCoordinates[0]);
-
-    //console.log( currentFlightData[i]["Latitude"], currentFlightData[i]["Longitude"], clickedCoordinates[1], clickedCoordinates[0] );
-    //console.log( volumeByAltitude );
+    volumeByAltitude = Math.min( 1.0, volumeByAltitude / 50);
 
     currentFlightData[i]["bufferNode"] = audioCtx.createBufferSource();
     currentFlightData[i]["gainNode"] = audioCtx.createGain();
     currentFlightData[i]["filterNode"] = audioCtx.createBiquadFilter();
     currentFlightData[i]["stereoPanner"] = audioCtx.createStereoPanner();
 
-
     // Configure
     currentFlightData[i]["bufferNode"].buffer = loopBuffers[ Math.floor( Math.random()*loopBuffers.length)];
     currentFlightData[i]["bufferNode"].loop = true;
     currentFlightData[i]["bufferNode"].playbackRate.value = 1.0;
-    currentFlightData[i]["gainNode"].gain.value = 1.0; // volume
+    currentFlightData[i]["gainNode"].gain.value = volumeByAltitude * volumeByGS * 1.0; // volume
+    console.log( volumeByAltitude * volumeByGS * 1.0 );
 
     currentFlightData[i]["filterNode"].type = "bandpass";
-    currentFlightData[i]["filterNode"].frequency.value = lerp(1000, 10000, currentFlightData[i]["Altitude"]/45000);
-    currentFlightData[i]["filterNode"].Q.value = 100;
+    currentFlightData[i]["filterNode"].frequency.value = lerp(500, 15000, currentFlightData[i]["Altitude"]/35000);
+    currentFlightData[i]["filterNode"].Q.value = 50;
 
     currentFlightData[i]["stereoPanner"].pan.value = Math.cos( currentFlightData[i]["Heading"] * Math.PI / 180.0 );
 
@@ -227,8 +225,6 @@ async function toggleAudio() {
   } else {
     await audioCtx.resume();
   }
-
-  await sendFlightRequest(49.00, 2.548, 5000)
 
   if( flightData === undefined) {
     return;
