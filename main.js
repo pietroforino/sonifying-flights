@@ -3,6 +3,7 @@ import noiseOscProcessorUrl from "./NoiseOscillatorProcessor.js?url";
 import saturatorProcessorUrl from "./SaturatorProcessor.js?url";
 import { NoiseOscillatorNode } from "./NoiseOscillatorNode";
 import WAAClock from "waaclock";
+import "./socket.js";
 
 const SCALE = [60, 62, 64, 65, 67, 69, 71]; // Major
 // const SCALE = [57, 59, 60, 62, 64, 65, 67]; // Minor
@@ -296,6 +297,7 @@ async function toggleAudio() {
   } else {
     await audioCtx.resume();
   }
+  console.log(flightData)
 }
 
 audioButton.addEventListener("click", toggleAudio);
