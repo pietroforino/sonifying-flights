@@ -3,7 +3,7 @@ import noiseOscProcessorUrl from "./NoiseOscillatorProcessor.js?url";
 import saturatorProcessorUrl from "./SaturatorProcessor.js?url";
 import { NoiseOscillatorNode } from "./NoiseOscillatorNode";
 import WAAClock from "waaclock";
-import "./socket.js";
+// import "./socket.js";
 
 const SCALE = [60, 62, 64, 65, 67, 69, 71]; // Major
 // const SCALE = [57, 59, 60, 62, 64, 65, 67]; // Minor
@@ -297,7 +297,46 @@ async function toggleAudio() {
   } else {
     await audioCtx.resume();
   }
-  console.log(flightData)
+  
+  sendFlightRequest(49.00, 2.548, 5000)
+
+}
+
+
+const data = [
+  { "lat":"Porsche", "model":"911S" },
+  { "long":"Mercedes-Benz", "model":"220SE" },
+  { "radius":"Jaguar","model": "Mark VII" }
+ ];
+ 
+let flightData
+
+const sendFlightRequest = (lat, long, r) => {
+  const param = {
+    "lat": lat,
+    "long": long,
+    "radius": r,
+  }
+  fetch("http://127.0.0.1:5000/receiver", 
+  {
+      method: 'POST',
+      headers: { 
+          'Content-type': 'application/json',
+          'Accept': 'application/json'
+      },
+
+  body:JSON.stringify(param)}).then(res=>{
+          if(res.ok){
+              return res.json()
+          }else{
+              alert("something is wrong")
+          }
+      }).then(jsonResponse=>{
+          flightData = jsonResponse
+          console.log(flightData)
+      } 
+      ).catch((err) => console.error(err));
 }
 
 audioButton.addEventListener("click", toggleAudio);
+
