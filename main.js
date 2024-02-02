@@ -1,12 +1,8 @@
 import "./style.css";
-import noiseOscProcessorUrl from "./NoiseOscillatorProcessor.js?url";
-import saturatorProcessorUrl from "./SaturatorProcessor.js?url";
-import { NoiseOscillatorNode } from "./NoiseOscillatorNode";
 import WAAClock from "waaclock";
 // import "./socket.js";
 
 const SCALE = [60, 62, 64, 65, 67, 69, 71]; // Major
-// const SCALE = [57, 59, 60, 62, 64, 65, 67]; // Minor
 
 let audioButton = document.querySelector("#audioButton");
 let visContainer = document.querySelector("#vis");
@@ -17,7 +13,30 @@ let firstStart = true;
 let clockEvents = [];
 let energy = 0.5;
 
-var center = [9.0953316, 45.4627042];
+
+let loopUrl = [
+  "/loops/loop_1.mp3",
+  "/loops/loop_2.mp3",
+  "/loops/loop_3.mp3",
+  "/loops/loop_4.mp3",
+  "/loops/loop_5.mp3",
+  "/loops/loop_6.mp3"
+]
+let loopBuffers = [];
+let bufferSourceNodes_loopsList = [];
+
+let oneshotBuffers = [];
+let oneshotUrl = [
+  "/oneshots/oneshot_1.mp3",
+  "/oneshots/oneshot_2.mp3",
+  "/oneshots/oneshot_3.mp3",
+  "/oneshots/oneshot_4.mp3",
+]
+let bufferSourceNodes_oneshotsList = [];
+
+
+var center = [9, 45];
+var sphereRadius = 50;
 var precision = 0.25;
 var epsilon = 1; // small number so that grid cells have some non zero height
 
@@ -31,7 +50,35 @@ function mtof(midi) {
   return Math.pow(2, (midi - 69) / 12) * 440;
 }
 
+
 async function startLoop() {
+
+  for( let i=0; i < bufferSourceNodes_loopsList.length; i++) {
+    // create
+    let gain = audioCtx.createGain();
+    let filter = audioCtx.createBiquadFilter();
+
+    // Configure
+    bufferSourceNodes_loopsList[i].loop = true;
+    gain.gain.value = 2.0;
+
+    filter.type = "bandpass";
+    filter.frequency.value = 1000 + Math.random() * 10000;
+    filter.Q.value = 100;
+
+
+    // Connect
+    bufferSourceNodes_loopsList[i].connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+
+    // start
+    bufferSourceNodes_loopsList[i].start();
+  }
+  // create
+
+  /*
   // Create
   let bufferSrcNode = audioCtx.createBufferSource();
   let gain = audioCtx.createGain();
@@ -48,8 +95,10 @@ async function startLoop() {
 
   // Start
   bufferSrcNode.start();
+  */
 }
 
+/*
 function playNote(
   {
     time,
@@ -68,7 +117,6 @@ function playNote(
 ) {
   // Create
   let osc = audioCtx.createOscillator();
-  let noiseOsc = new NoiseOscillatorNode(audioCtx);
   let noiseGain = audioCtx.createGain();
   let gain = audioCtx.createGain();
   let delay = audioCtx.createDelay();
@@ -89,17 +137,11 @@ function playNote(
 
   // Connect
   osc.connect(gain);
-  noiseOsc.connect(noiseGain);
-  noiseGain.connect(gain);
   gain.connect(destination);
-  gain.connect(delay);
-  delay.connect(destination);
 
   // Start
   osc.start(time);
-  noiseOsc.start();
   osc.stop(time + duration + release);
-  noiseOsc.stop(time + duration + release);
 }
 
 function playOneShotBuffer({ time, buffer, gain = 0.5, rate = 1.0 }) {
@@ -225,15 +267,49 @@ async function startBufferLoop(url, gain, rate, initialDelay, interval) {
 function updateEnergy(value) {
   energy = value;
 }
+*/
 
 async function startEverything() {
   await audioCtx.resume();
-  await audioCtx.audioWorklet.addModule(noiseOscProcessorUrl);
-  await audioCtx.audioWorklet.addModule(saturatorProcessorUrl);
-  await startLoop();
-  let saturator = new AudioWorkletNode(audioCtx, "saturator");
-  saturator.connect(audioCtx.destination);
+
+  // do this same stuff with reverb
+  //let saturator = new AudioWorkletNode(audioCtx, "saturator");
+  //saturator.connect(audioCtx.destination);
   clock.start();
+
+/*
+  // load loops
+  for (let i=0; i < loopUrl.length; i++) {
+    console.log( loopUrl[i] );
+    loopBuffers.push( await loadBuffer( loopUrl[i] ) );
+  }
+  console.log( loopBuffers );
+
+  // load oneshots
+  for (let i=0; i < oneshotUrl.length; i++) {
+    console.log( oneshotUrl[i] );
+    oneshotBuffers.push( await loadBuffer( oneshotUrl[i] ) );
+  }
+  console.log( oneshotBuffers );
+
+  // now create the buffers source nodes
+  for (let i=0; i < loopBuffers.length; i++) {
+    let bufferSrcNode = audioCtx.createBufferSource();
+    bufferSrcNode.buffer = loopBuffers[i];
+    bufferSourceNodes_loopsList.push( bufferSrcNode )
+  }
+  console.log( bufferSourceNodes_loopsList )
+  */
+
+  await startLoop();
+
+  /*
+  loopBuffers.push( await loadBuffer("/loops/loop_1.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_2.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_3.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_4.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_5.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_6.mp3") );
 
   let weatherData = await fetch("/weatherdataset.json").then((r) => r.json());
   let tempo = 0.25;
@@ -290,6 +366,28 @@ async function startEverything() {
     }, audioCtx.currentTime)
     .repeat(tempo)
     .tolerance({ early: 0 });
+  */
+}
+
+
+function destoyPrevSounds() {
+  console.log("destroy sounds");
+}
+
+
+function emitNewSounds( data ) {
+  console.log( data.length );
+
+  for( let i=0; i < data.length; i++) {
+    // for every flight lets create a new sound
+    let groundSpeed = data[i]["Ground Speed"];
+    let id = data[i]["flight_id"];
+    let heading = data[i]["Heading"];
+    let lat = data[i]["Latitude"];
+    let long = data[i]["Longitude"];
+
+    console.log( id );
+  }
 }
 
 
@@ -302,22 +400,33 @@ async function toggleAudio() {
   } else {
     await audioCtx.resume();
   }
-  
-  // sendFlightRequest(49.00, 2.548, 5000)
 
+  await sendFlightRequest(49.00, 2.548, 5000)
+
+  if( flightData === undefined) {
+    return;
+  }
+
+  destoyPrevSounds();
+  // according to the flight we are tracking,
+  // let's create corresponding sounds
+  emitNewSounds( flightData );
 }
-let flightData
 
-const sendFlightRequest = (lat, long, r) => {
+
+let flightData;
+
+//sendFlightRequest = (lat, long, r) => {
+async function sendFlightRequest(lat, long, r) {
   const param = {
     "lat": lat,
     "long": long,
     "radius": r,
   }
-  fetch("http://127.0.0.1:5000/receiver", 
+  fetch("http://127.0.0.1:5000/receiver",
   {
       method: 'POST',
-      headers: { 
+      headers: {
           'Content-type': 'application/json',
           'Accept': 'application/json'
       },
@@ -330,8 +439,9 @@ const sendFlightRequest = (lat, long, r) => {
           }
       }).then(jsonResponse=>{
           flightData = jsonResponse
+          //return( flightData )
           console.log(flightData)
-      } 
+      }
       ).catch((err) => console.error(err));
 }
 
@@ -420,6 +530,3 @@ function updateDome(center, raggio) {
       }
   });
 }
-
-
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from FlightRadar24 import FlightRadar24API
+from python_modules.FlightRadar24 import FlightRadar24API
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -34,6 +34,7 @@ def getJsonFromFlight(data):
 
         #print( dictionary )
         flightsDictList.append( dictionary )
+
     return flightsDictList
     # print(flightsDictList)
 
@@ -51,15 +52,15 @@ app = Flask(__name__)
 cors = CORS(app)
 
 @app.route("/receiver", methods=["GET", "POST"])
-def postME(): 
+def postME():
    params = request.get_json()
    print(params)
    bounds = fr_api.get_bounds_by_point(params['lat'], params['long'], params['radius'])
    flights = fr_api.get_flights(bounds = bounds)
    styledFlight = getJsonFromFlight(flights)
 #    print('Connected', flights, styledFlight)
-   
+
    data = jsonify(styledFlight)
    return data
-if __name__ == "__main__": 
+if __name__ == "__main__":
    app.run(debug=True)
