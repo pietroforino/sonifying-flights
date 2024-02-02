@@ -1,11 +1,7 @@
 import "./style.css";
-import noiseOscProcessorUrl from "./NoiseOscillatorProcessor.js?url";
-import saturatorProcessorUrl from "./SaturatorProcessor.js?url";
-import { NoiseOscillatorNode } from "./NoiseOscillatorNode";
 import WAAClock from "waaclock";
 
 const SCALE = [60, 62, 64, 65, 67, 69, 71]; // Major
-// const SCALE = [57, 59, 60, 62, 64, 65, 67]; // Minor
 
 let audioButton = document.querySelector("#audioButton");
 let visContainer = document.querySelector("#vis");
@@ -15,6 +11,30 @@ let clock = new WAAClock(audioCtx, { toleranceEarly: 0.1 });
 let firstStart = true;
 let clockEvents = [];
 let energy = 0.5;
+
+
+let loopUrl = [
+  "/loops/loop_1.mp3",
+  "/loops/loop_2.mp3",
+  "/loops/loop_3.mp3",
+  "/loops/loop_4.mp3",
+  "/loops/loop_5.mp3",
+  "/loops/loop_6.mp3"
+]
+let loopBuffers = [];
+let bufferSourceNodes_loopsList = [];
+
+let oneshotBuffers = [];
+let oneshotUrl = [
+  "/oneshots/oneshot_1.mp3",
+  "/oneshots/oneshot_2.mp3",
+  "/oneshots/oneshot_3.mp3",
+  "/oneshots/oneshot_4.mp3",
+]
+let bufferSourceNodes_oneshotsList = [];
+
+
+
 
 function loadBuffer(url) {
   return fetch(url)
@@ -26,7 +46,35 @@ function mtof(midi) {
   return Math.pow(2, (midi - 69) / 12) * 440;
 }
 
+
 async function startLoop() {
+
+  for( let i=0; i < bufferSourceNodes_loopsList.length; i++) {
+    // create
+    let gain = audioCtx.createGain();
+    let filter = audioCtx.createBiquadFilter();
+
+    // Configure
+    bufferSourceNodes_loopsList[i].loop = true;
+    gain.gain.value = 2.0;
+
+    filter.type = "bandpass";
+    filter.frequency.value = 1000 + Math.random() * 10000;
+    filter.Q.value = 100;
+
+
+    // Connect
+    bufferSourceNodes_loopsList[i].connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+
+    // start
+    bufferSourceNodes_loopsList[i].start();
+  }
+  // create
+
+  /*
   // Create
   let bufferSrcNode = audioCtx.createBufferSource();
   let gain = audioCtx.createGain();
@@ -43,8 +91,10 @@ async function startLoop() {
 
   // Start
   bufferSrcNode.start();
+  */
 }
 
+/*
 function playNote(
   {
     time,
@@ -63,7 +113,6 @@ function playNote(
 ) {
   // Create
   let osc = audioCtx.createOscillator();
-  let noiseOsc = new NoiseOscillatorNode(audioCtx);
   let noiseGain = audioCtx.createGain();
   let gain = audioCtx.createGain();
   let delay = audioCtx.createDelay();
@@ -84,17 +133,11 @@ function playNote(
 
   // Connect
   osc.connect(gain);
-  noiseOsc.connect(noiseGain);
-  noiseGain.connect(gain);
   gain.connect(destination);
-  gain.connect(delay);
-  delay.connect(destination);
 
   // Start
   osc.start(time);
-  noiseOsc.start();
   osc.stop(time + duration + release);
-  noiseOsc.stop(time + duration + release);
 }
 
 function playOneShotBuffer({ time, buffer, gain = 0.5, rate = 1.0 }) {
@@ -220,15 +263,48 @@ async function startBufferLoop(url, gain, rate, initialDelay, interval) {
 function updateEnergy(value) {
   energy = value;
 }
+*/
 
 async function startEverything() {
   await audioCtx.resume();
-  await audioCtx.audioWorklet.addModule(noiseOscProcessorUrl);
-  await audioCtx.audioWorklet.addModule(saturatorProcessorUrl);
-  await startLoop();
-  let saturator = new AudioWorkletNode(audioCtx, "saturator");
-  saturator.connect(audioCtx.destination);
+
+  // do this same stuff with reverb
+  //let saturator = new AudioWorkletNode(audioCtx, "saturator");
+  //saturator.connect(audioCtx.destination);
   clock.start();
+
+  // load loops
+  for (let i=0; i < loopUrl.length; i++) {
+    console.log( loopUrl[i] );
+    loopBuffers.push( await loadBuffer( loopUrl[i] ) );
+  }
+  console.log( loopBuffers );
+
+  // load oneshots
+  for (let i=0; i < oneshotUrl.length; i++) {
+    console.log( oneshotUrl[i] );
+    oneshotBuffers.push( await loadBuffer( oneshotUrl[i] ) );
+  }
+  console.log( oneshotBuffers );
+
+  // now create the buffers source nodes
+  for (let i=0; i < loopBuffers.length; i++) {
+    let bufferSrcNode = audioCtx.createBufferSource();
+    bufferSrcNode.buffer = loopBuffers[i];
+    bufferSourceNodes_loopsList.push( bufferSrcNode )
+  }
+  console.log( bufferSourceNodes_loopsList )
+
+
+  await startLoop();
+
+  /*
+  loopBuffers.push( await loadBuffer("/loops/loop_1.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_2.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_3.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_4.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_5.mp3") );
+  loopBuffers.push( await loadBuffer("/loops/loop_6.mp3") );
 
   let weatherData = await fetch("/weatherdataset.json").then((r) => r.json());
   let tempo = 0.25;
@@ -285,6 +361,7 @@ async function startEverything() {
     }, audioCtx.currentTime)
     .repeat(tempo)
     .tolerance({ early: 0 });
+  */
 }
 
 async function toggleAudio() {
